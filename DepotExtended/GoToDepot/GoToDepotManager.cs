@@ -103,7 +103,8 @@ namespace DepotExtended.GoToDepot
                 mInf.Invoke(pair.Value.Task, new object[] {writer});
             }
         }
-
+        
+#region HARMONY
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GoToDepotDelayedAction), "Initialize")]
         // ReSharper disable once InconsistentNaming
@@ -225,6 +226,6 @@ namespace DepotExtended.GoToDepot
                 yield return instruction;
             }
         }
-
+#endregion
     }
 }
