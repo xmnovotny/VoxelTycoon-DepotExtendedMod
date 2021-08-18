@@ -10,7 +10,6 @@ namespace DepotExtended.GoToDepot
 {
     public class GoToDepotVehicleData: IVehicleDestination
     {
-        private readonly VehicleDepot _depot;
         public string Name { get; }
 
         public HashSet<TrackConnection> Stops { get; } = new();
@@ -19,14 +18,15 @@ namespace DepotExtended.GoToDepot
         public bool IsValid { get; private set; }
         public TurnAroundOverrideTask TurningTask { get; set; }
         public GoToDepotOverrideTask Task { get; }
+        public VehicleDepot Depot { get; }
 
         public GoToDepotVehicleData(VehicleDepot depot, GoToDepotOverrideTask task)
         {
-            _depot = depot ? depot : throw new ArgumentNullException(nameof(depot));
+            Depot = depot ? depot : throw new ArgumentNullException(nameof(depot));
             Target = depot.Center;
             Name = depot.Name;
             Task = task;
-            TargetConnection = FindEndConnection(_depot.SpawnConnection);
+            TargetConnection = FindEndConnection(Depot.SpawnConnection);
             Stops.Add(TargetConnection);
             IsValid = true;
         }
@@ -35,7 +35,7 @@ namespace DepotExtended.GoToDepot
         {
             if (!IsValid)
                 return;
-            if (ReferenceEquals(_depot, null) || !_depot.IsBuilt)
+            if (ReferenceEquals(Depot, null) || !Depot.IsBuilt)
             {
                 IsValid = false;
                 Stops.Clear();

@@ -1,12 +1,14 @@
 ﻿using DepotExtended.GoToDepot;
 using HarmonyLib;
 using VoxelTycoon.Modding;
+using VoxelTycoon.Serialization;
 using VoxelTycoon.Tracks.Rails;
 using XMNUtils;
 
 namespace DepotExtended
 {
     [HarmonyPatch]
+    [SchemaVersion(1)]
     public class DepotExtendedMod: Mod
     {
         private Harmony _harmony;
@@ -30,6 +32,19 @@ namespace DepotExtended
         {
             _harmony.UnpatchAll(HarmonyID);
             _harmony = null;
+        }
+
+        protected override void Read(StateBinaryReader reader)
+        {
+            if (SchemaVersion<DepotExtendedMod>.AtLeast(1))
+            {
+                SimpleManager<GoToDepotManager>.Current?.Read(reader);
+            }
+        }
+
+        protected override void Write(StateBinaryWriter writer)
+        {
+            SimpleManager<GoToDepotManager>.Current?.Write(writer);
         }
     }
 }

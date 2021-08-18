@@ -2,11 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using VoxelTycoon;
+using VoxelTycoon.Serialization;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
 using VoxelTycoon.Tracks.Roads;
@@ -15,16 +17,16 @@ using XMNUtils;
 
 namespace DepotExtended.GoToDepot
 {
-    //TODO: Saving and loading
     [HarmonyPatch]
+    [SchemaVersion(1)]
     public class GoToDepotManager: SimpleManager<GoToDepotManager>
     {
         private readonly Dictionary<Vehicle, GoToDepotVehicleData> _vehiclesToDepot = new();
 
-        private void GoToDepot(VehicleDepot depot, [NotNull] GoToDepotOverrideTask task)
+        private GoToDepotVehicleData GoToDepot(VehicleDepot depot, [NotNull] GoToDepotOverrideTask task)
         {
             if (task == null) throw new ArgumentNullException(nameof(task));
-            _vehiclesToDepot[task.Vehicle] = new GoToDepotVehicleData(depot, task);
+            return _vehiclesToDepot[task.Vehicle] = new GoToDepotVehicleData(depot, task);
         }
 
         [UsedImplicitly]
@@ -57,6 +59,51 @@ namespace DepotExtended.GoToDepot
             yield return origEnumerator;
         }
 
+        internal void Read(StateBinaryReader reader)
+        {
+            if (SchemaVersion<GoToDepotManager>.AtLeast(1))
+            {
+                int count = reader.ReadInt();
+                if (count > 0)
+                {
+                    MethodInfo mInf = AccessTools.Method(typeof(GoToDepotOverrideTask), "Read");
+                    for (int i = 0; i < count; i++)
+                    {
+                        Vehicle vehicle = LazyManager<VehicleManager>.Current.FindById(reader.ReadInt());
+                        GoToDepotOverrideTask task = new(vehicle);
+                        VehicleDepot depot = reader.ReadBuilding<VehicleDepot>();
+                        mInf.Invoke(task, new object[] {reader});
+                        if (vehicle.Schedule.OverrideTask is TurnAroundOverrideTask turnTask)
+                        {
+                            GoToDepotVehicleData data = GoToDepot(depot, task);
+                            data.TurningTask = turnTask;
+                        }
+                    }
+                }
+            }
+        }
+
+        internal void Write(StateBinaryWriter writer)
+        {
+            using PooledList<KeyValuePair<Vehicle,GoToDepotVehicleData>> toSave = PooledList<KeyValuePair<Vehicle,GoToDepotVehicleData>>.Take();
+            foreach (KeyValuePair<Vehicle,GoToDepotVehicleData> pair in _vehiclesToDepot)
+            {
+                if (pair.Key.Schedule.OverrideTask is TurnAroundOverrideTask turnTask && pair.Value.TurningTask == turnTask) 
+                    toSave.Add(pair);
+            }
+            writer.WriteInt(toSave.Count);
+            if (toSave.Count == 0)
+                return;
+
+            MethodInfo mInf = AccessTools.Method(typeof(GoToDepotOverrideTask), "Write");
+            foreach (KeyValuePair<Vehicle,GoToDepotVehicleData> pair in toSave)
+            {
+                writer.WriteInt(pair.Key.Id); //vehicle
+                writer.WriteBuilding(pair.Value.Depot);
+                mInf.Invoke(pair.Value.Task, new object[] {writer});
+            }
+        }
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GoToDepotDelayedAction), "Initialize")]
         // ReSharper disable once InconsistentNaming
@@ -74,6 +121,19 @@ namespace DepotExtended.GoToDepot
             Current?.GoToDepot(depot, __instance);
         }
 
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GoToDepotOverrideTask), "Read")]
+        // ReSharper disable once InconsistentNaming
+        private static void GoToDepotOverrideTask_Read_pof(GoToDepotOverrideTask __instance, GoToDepotDelayedAction ____action)
+        {
+            if (Current != null)
+            {
+                VehicleDepot depot = AccessTools.Field(typeof(GoToDepotDelayedAction), "_depot").GetValue(____action) as VehicleDepot;
+                if (depot != null)
+                    Current.GoToDepot(depot, __instance);
+            }
+        }
+        
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GoToDepotOverrideTask), "Run")]
         // ReSharper disable once InconsistentNaming
