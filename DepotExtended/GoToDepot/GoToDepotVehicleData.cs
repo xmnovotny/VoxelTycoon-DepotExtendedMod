@@ -17,6 +17,7 @@ namespace DepotExtended.GoToDepot
         public TrackConnection TargetConnection { get; }
         public Vector3 Target { get; }
         public bool IsValid { get; private set; }
+        public TurnAroundOverrideTask TurningTask { get; set; }
         public GoToDepotOverrideTask Task { get; }
 
         public GoToDepotVehicleData(VehicleDepot depot, GoToDepotOverrideTask task)

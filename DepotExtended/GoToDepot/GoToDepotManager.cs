@@ -15,6 +15,7 @@ using XMNUtils;
 
 namespace DepotExtended.GoToDepot
 {
+    //TODO: Saving and loading
     [HarmonyPatch]
     public class GoToDepotManager: SimpleManager<GoToDepotManager>
     {
@@ -51,6 +52,8 @@ namespace DepotExtended.GoToDepot
             {
                 yield return new WaitForSeconds(1);
             }
+            //remove data, they are no longer needed
+            _vehiclesToDepot.Remove(__instance.Vehicle);
             yield return origEnumerator;
         }
 
@@ -79,6 +82,48 @@ namespace DepotExtended.GoToDepot
             if (Current != null)
             {
                 __result = Current.RunGoToDepotTask(__instance, __result);
+            }
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(VehicleSchedule), "PushOverrideTask")]
+        // ReSharper disable once InconsistentNaming
+        private static void GoToDepotOverrideTask_PushOverrideTask_prf(VehicleSchedule __instance, OverrideTask task)
+        {
+            GoToDepotVehicleData data;
+            if (Current != null && __instance.Vehicle is Train &&
+                 (data = Current._vehiclesToDepot.GetValueOrDefault(__instance.Vehicle)) != null)
+            {
+                if (data.TurningTask == null && __instance.OverrideTask is GoToDepotOverrideTask gotoTask &&
+                    task is TurnAroundOverrideTask turnTask && data.Task == gotoTask)
+                {
+                    //train starts the turn around override task to be able to get to the depot
+                    data.TurningTask = turnTask;
+                }
+                else if (task != data.Task)
+                {
+                    //in other cases remove data
+                    Current._vehiclesToDepot.Remove(__instance.Vehicle);
+                }
+            }
+        }
+        
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(VehicleTask), "OnCompleted")]
+        // ReSharper disable once InconsistentNaming
+        private static void GoToDepotOverrideTask_OnCompleted_pof(VehicleTask __instance)
+        {
+            GoToDepotVehicleData data;
+            if (Current != null && __instance is TurnAroundOverrideTask && __instance.Vehicle is Train && (data = Current._vehiclesToDepot.GetValueOrDefault(__instance.Vehicle)) != null)
+            {
+                if (data.TurningTask == __instance)
+                {
+                    //turn around task is completed, restore original go to depot task
+                    data.TurningTask = null;
+                    __instance.Vehicle.Schedule.PushOverrideTask(data.Task);
+                }
+                else
+                    Current._vehiclesToDepot.Remove(__instance.Vehicle);
             }
         }
 
