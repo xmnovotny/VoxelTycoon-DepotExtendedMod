@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using VoxelTycoon;
+using VoxelTycoon.Notifications;
 using VoxelTycoon.Serialization;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
@@ -172,19 +172,35 @@ namespace DepotExtended.GoToDepot
         [HarmonyPostfix]
         [HarmonyPatch(typeof(VehicleTask), "OnCompleted")]
         // ReSharper disable once InconsistentNaming
-        private static void GoToDepotOverrideTask_OnCompleted_pof(VehicleTask __instance)
+        private static void VehicleTask_OnCompleted_pof(VehicleTask __instance)
         {
             GoToDepotVehicleData data;
-            if (Current != null && __instance is TurnAroundOverrideTask && __instance.Vehicle is Train && (data = Current._vehiclesToDepot.GetValueOrDefault(__instance.Vehicle)) != null)
+            if (Current != null)
             {
-                if (data.TurningTask == __instance)
+                if (__instance is TurnAroundOverrideTask && __instance.Vehicle is Train && (data = Current._vehiclesToDepot.GetValueOrDefault(__instance.Vehicle)) != null)
                 {
-                    //turn around task is completed, restore original go to depot task
-                    data.TurningTask = null;
-                    __instance.Vehicle.Schedule.PushOverrideTask(data.Task);
+                    if (data.TurningTask == __instance)
+                    {
+                        //turn around task is completed, restore original go to depot task
+                        data.TurningTask = null;
+                        __instance.Vehicle.Schedule.PushOverrideTask(data.Task);
+                    }
+                    else
+                        Current._vehiclesToDepot.Remove(__instance.Vehicle);
                 }
-                else
-                    Current._vehiclesToDepot.Remove(__instance.Vehicle);
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GoToDepotDelayedAction), "DoDelayedAction")]
+        // ReSharper disable once InconsistentNaming`
+        private static void GoToDepotDelayedAction_DoDelayedAction_pof(GoToDepotDelayedAction __instance, Vehicle ____vehicle, VehicleDepot ____depot)
+        {
+            if (Current != null && ____depot != null)
+            {
+                //TODO: Add translation
+                Manager<NotificationManager>.Current.Push($"Vehicle arrived to the depot", $"{____vehicle.Name} just arrived to the {____depot.Name}", 
+                    new GoToVehicleNotificationAction(____vehicle));
             }
         }
 

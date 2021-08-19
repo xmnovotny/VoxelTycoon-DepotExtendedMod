@@ -1,16 +1,15 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using HarmonyLib;
-using Unity.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using VoxelTycoon;
 using VoxelTycoon.Game.UI;
 using VoxelTycoon.Game.UI.VehicleEditorWindowViews;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
-using VoxelTycoon.UI;
 using VoxelTycoon.UI.Controls;
 
 namespace DepotExtended.UI.VehicleEditorWindowViews
@@ -21,9 +20,8 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
         private List<VehicleUnitCheckboxGroup> _checkboxGroups;
         private Vehicle _vehicle;
         private ActionsView _actionsView;
-        private ActionButton _moveLeftButton;
-        private ActionButton _moveRightButton;
-        private static Transform _buttonTemplate = null;
+        private static Transform _buttonTemplate;
+        public bool Changed { get; private set; }
 
         private void Initialize(ActionsView actionsView, VehicleEditorWindow vehicleEditorWindow, List<VehicleUnitCheckboxGroup> checkboxGroups)
         {
@@ -32,11 +30,11 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             _actionsView = actionsView;
             _checkboxGroups = checkboxGroups;
             Transform actionsRow = _actionsView.transform.Find("ActionsRow");
-            _moveLeftButton = AddActionButton(actionsRow, "<", MoveLeft, InvalidataMoveLeft,"Move selected vehicle(s) to the left.\nHold <b>Shift</b> to move vehicle to the front."); //TODO: translate
-            _moveRightButton = AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, "Move selected vehicle(s) to the right.\nHold <b>Shift</b> to move vehicle to the rear."); //TODO: translate
+            AddActionButton(actionsRow, "<", MoveLeft, InvalidataMoveLeft,"Move selected vehicle(s) to the left.\nHold <b>Shift</b> to move vehicle to the front."); //TODO: translate
+            AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, "Move selected vehicle(s) to the right.\nHold <b>Shift</b> to move vehicle to the rear."); //TODO: translate
         }
 
-        private ActionButton AddActionButton(Transform parent, string text, UnityAction onClick, UnityAction<ActionButton> onInvalidate, string toolTipText = null)
+        private ActionButton AddActionButton(Transform parent, string text, Action<PointerEventData> onClick, UnityAction<ActionButton> onInvalidate, string toolTipText = null)
         {
             if (_buttonTemplate == null)
             {
@@ -44,15 +42,11 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             }
 
             Transform transf = Instantiate(_buttonTemplate, parent);
-            Button.ButtonClickedEvent onClEvent = new Button.ButtonClickedEvent();
-            onClEvent.AddListener(onClick);
-            transf.GetComponent<Button>().onClick = onClEvent;
+            transf.GetComponent<ClickableDecorator>().OnClick = onClick;
             transf.Find<Text>("Icon").text = text;
             ActionButton actButt = transf.GetComponent<ActionButton>();
             actButt.OnInvalidate = new ActionButtonOnInvalidateEvent();
             actButt.OnInvalidate.AddListener(onInvalidate);
-/*            if (toolTipText != null)
-                actButt.TooltipTarget = Tooltip.For(actButt, toolTipText);*/
             actButt.TooltipTarget.Text = toolTipText;
             
             return actButt;
@@ -101,12 +95,12 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             button.Toggle(true);
         }
 
-        private void MoveLeft()
+        private void MoveLeft(PointerEventData data)
         {
             MoveVehicles(-1, InputHelper.Shift);
         }
 
-        private void MoveRight()
+        private void MoveRight(PointerEventData data)
         {
             MoveVehicles(1, InputHelper.Shift);
         }
@@ -179,6 +173,8 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             {
                 _checkboxGroups[newIdx].Checked = true;
             }
+
+            Changed = true;
         }
 
         private bool ValidateCouplings(List<VehicleRecipeInstance> recipes)
@@ -199,12 +195,8 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             button.onClick = null;
             ActionButton actionButton = _buttonTemplate.GetComponent<ActionButton>();
             actionButton.OnInvalidate = null;
-/*            actionButton.TooltipTarget.enabled = false;
-            DestroyImmediate(actionButton.TooltipTarget);
-            actionButton.TooltipTarget = null;*/
             ClickableDecorator decorator = _buttonTemplate.GetComponent<ClickableDecorator>();
             decorator.OnClick = null;
-            FileLog.Log(XMNUtils.GameObjectDumper.DumpGameObject(_buttonTemplate.gameObject));
         }
         
         public static void TryInsertInstance(ActionsView actionsView, VehicleEditorWindow vehicleEditorWindow, List<VehicleUnitCheckboxGroup> checkboxGroups)
