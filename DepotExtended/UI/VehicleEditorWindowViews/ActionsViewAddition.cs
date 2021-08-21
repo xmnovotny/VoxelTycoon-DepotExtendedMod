@@ -14,45 +14,49 @@ using VoxelTycoon.UI.Controls;
 
 namespace DepotExtended.UI.VehicleEditorWindowViews
 {
-    public class ActionsViewAddition: MonoBehaviour
+    public class ActionsViewAddition: ActionsViewBase
     {
         private VehicleEditorWindow _editorWindow;
         private List<VehicleUnitCheckboxGroup> _checkboxGroups;
         private Vehicle _vehicle;
         private ActionsView _actionsView;
-        private static Transform _buttonTemplate;
+        private DepotVehiclesWindow _depotVehiclesWindow;
+        private readonly HashSet<VehicleRecipeInstance> _originalVehicles = new();  //vehicles that was on the edited train + vehicles placed from the depot (=not newly bought vehicles)
         public bool Changed { get; private set; }
 
-        private void Initialize(ActionsView actionsView, VehicleEditorWindow vehicleEditorWindow, List<VehicleUnitCheckboxGroup> checkboxGroups)
+        public void MovedFromDepot(VehicleRecipeInstance instance)
+        {
+            _originalVehicles.Add(instance);
+            Changed = true;
+        }
+        
+        private void Initialize(ActionsView actionsView, VehicleEditorWindow vehicleEditorWindow, List<VehicleUnitCheckboxGroup> checkboxGroups, DepotVehiclesWindow depotVehiclesWindow)
         {
             _editorWindow = vehicleEditorWindow;
             _vehicle = vehicleEditorWindow.Vehicle;
             _actionsView = actionsView;
             _checkboxGroups = checkboxGroups;
+            _depotVehiclesWindow = depotVehiclesWindow;
             Transform actionsRow = _actionsView.transform.Find("ActionsRow");
-            AddActionButton(actionsRow, "<", MoveLeft, InvalidataMoveLeft,"Move selected vehicle(s) to the left.\nHold <b>Shift</b> to move vehicle to the front."); //TODO: translate
-            AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, "Move selected vehicle(s) to the right.\nHold <b>Shift</b> to move vehicle to the rear."); //TODO: translate
-        }
-
-        private ActionButton AddActionButton(Transform parent, string text, Action<PointerEventData> onClick, UnityAction<ActionButton> onInvalidate, string toolTipText = null)
-        {
-            if (_buttonTemplate == null)
-            {
-                CreateButtonTemplate();
-            }
-
-            Transform transf = Instantiate(_buttonTemplate, parent);
-            transf.GetComponent<ClickableDecorator>().OnClick = onClick;
-            transf.Find<Text>("Icon").text = text;
-            ActionButton actButt = transf.GetComponent<ActionButton>();
-            actButt.OnInvalidate = new ActionButtonOnInvalidateEvent();
-            actButt.OnInvalidate.AddListener(onInvalidate);
-            actButt.TooltipTarget.Text = toolTipText;
+            AddActionButton(actionsRow, "<", MoveLeft, InvalidateMoveLeft,"Move selected unit(s) to the left.\nHold <b>Shift</b> to move vehicle to the front."); //TODO: translate
+            AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, "Move selected unit(s) to the right.\nHold <b>Shift</b> to move vehicle to the rear."); //TODO: translate
+            AddActionButton(actionsRow, "", MoveToDepot, InvalidateMoveToDepot, "Placing selected unit(s) from the train into the depot.", R.Fonts.Ketizoloto); //TODO: translate
             
-            return actButt;
+            FillOriginalVehicles();
         }
 
-        private void InvalidataMoveLeft(ActionButton button)
+        private void FillOriginalVehicles()
+        {
+            _originalVehicles.Clear();
+            ImmutableList<VehicleRecipeInstance> items = _vehicle.Consist.Items;
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                _originalVehicles.Add(items[i]);
+            }
+        }
+        
+
+        private void InvalidateMoveLeft(ActionButton button)
         {
             ImmutableList<VehicleRecipeInstance> selection = _editorWindow.Selection;
             if (selection.Count == 0)
@@ -69,7 +73,7 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
                     return;
                 }
             }
-            
+
             button.Toggle(true);
         }
 
@@ -95,6 +99,31 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             button.Toggle(true);
         }
 
+        private void InvalidateMoveToDepot(ActionButton button)
+        {
+            ImmutableList<VehicleRecipeInstance> selection = _editorWindow.Selection;
+            if (selection.Count == 0)
+            {
+                button.Toggle(false);
+                button.TooltipTarget.Text = "Select some units first"; //TODO: translate
+                return;
+            }
+
+            for (int i = selection.Count - 1; i >= 0; i--)
+            {
+                if (!_originalVehicles.Contains(selection[i]))
+                {
+                    //newly bought vehicle = not allowed to place in the depot
+                    button.TooltipTarget.Text = "Cannot place newly bought units to the depot."; //TODO: translate
+                    button.Toggle(false);
+                    return;
+                }
+            }
+            
+            button.TooltipTarget.Text = "Placing selected unit(s) from the train into the depot."; //TODO: translate
+            button.Toggle(true);
+        }
+
         private void MoveLeft(PointerEventData data)
         {
             MoveVehicles(-1, InputHelper.Shift);
@@ -105,6 +134,21 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             MoveVehicles(1, InputHelper.Shift);
         }
 
+        private void MoveToDepot(PointerEventData data)
+        {
+            ImmutableList<VehicleRecipeInstance> selection = _editorWindow.Selection;
+            for (int i = selection.Count - 1; i >= 0; i--)
+            {
+                if (!_originalVehicles.Remove(selection[i]))  //not allowed to remove newly bought vehicles
+                    continue;
+                
+                _depotVehiclesWindow.AddUnitToDepot(selection[i], _vehicle.Consist);
+                Changed = true;
+            }
+            _editorWindow.Invalidate();
+            _depotVehiclesWindow.Invalidate();
+        }
+        
         private void MoveVehicles(int difference, bool toTheEnd)
         {
             ImmutableList<VehicleRecipeInstance> selection = _editorWindow.Selection;
@@ -188,23 +232,12 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             return true;
         }
 
-        private void CreateButtonTemplate()
-        {
-            _buttonTemplate = Instantiate<Transform>(R.Game.UI.VehicleEditorWindow.Content.transform.Find("Footer/Actions/ActionsRow/Remove"));
-            Button button = _buttonTemplate.GetComponent<Button>();
-            button.onClick = null;
-            ActionButton actionButton = _buttonTemplate.GetComponent<ActionButton>();
-            actionButton.OnInvalidate = null;
-            ClickableDecorator decorator = _buttonTemplate.GetComponent<ClickableDecorator>();
-            decorator.OnClick = null;
-        }
-        
-        public static void TryInsertInstance(ActionsView actionsView, VehicleEditorWindow vehicleEditorWindow, List<VehicleUnitCheckboxGroup> checkboxGroups)
+        public static void TryInsertInstance(ActionsView actionsView, VehicleEditorWindow vehicleEditorWindow, List<VehicleUnitCheckboxGroup> checkboxGroups, DepotVehiclesWindow depotVehiclesWindow)
         {
             if (vehicleEditorWindow.Vehicle is Train)
             {
                 ActionsViewAddition actAdd = actionsView.gameObject.AddComponent<ActionsViewAddition>();
-                actAdd.Initialize(actionsView, vehicleEditorWindow, checkboxGroups);
+                actAdd.Initialize(actionsView, vehicleEditorWindow, checkboxGroups, depotVehiclesWindow);
             }
         }
     }
