@@ -37,21 +37,26 @@ namespace DepotExtended.UI
 
         private void InitializeThumbs(IReadOnlyList<VehicleUnit> units)
         {
-            _unitThumbsContainer.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, _window.ThumbContainerHeight);
-            float thumbScale = _window.ThumbScale;
-            float currOffset = 0f; 
+            float height = _window.ThumbContainerHeight;
+            _unitThumbsContainer.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+            float thumbScale = _window.ThumbScale / 2;
+            float rowHeight = height / 2;
+            float currOffset = 0f;
+            float row = 0;
             foreach (VehicleUnit vehicleUnit in units)
             {
-                if (currOffset * thumbScale > (float)_window.ItemWidth)
-                {
-                    break;
-                }
-                Image image = Object.Instantiate(R.Game.UI.DepotWindow.DepotWindowVehicleListItemUnitThumb, _unitThumbsContainer);
-                Sprite vehicleUnitIcon = LazyManager<IconRenderer>.Current.GetVehicleUnitIcon(vehicleUnit.SharedData.AssetId, vehicleUnit.Flipped, thumbScale);
                 float length = vehicleUnit.SharedData.Length;
+                if (length + currOffset * thumbScale > _window.ItemWidth)
+                {
+                    if (++row>=2)
+                        break;
+                    currOffset = 0;
+                }
+                Image image = Instantiate(R.Game.UI.DepotWindow.DepotWindowVehicleListItemUnitThumb, _unitThumbsContainer);
+                Sprite vehicleUnitIcon = LazyManager<IconRenderer>.Current.GetVehicleUnitIcon(vehicleUnit.SharedData.AssetId, vehicleUnit.Flipped, thumbScale);
                 float z = 0;
                 float x = (currOffset + length / 2f - z) * thumbScale;
-                image.rectTransform.anchoredPosition = new Vector2(x, 0f);
+                image.rectTransform.anchoredPosition = new Vector2(x, row * rowHeight);
                 image.GetComponent<Image>().sprite = vehicleUnitIcon;
                 image.SetNativeSize();
                 currOffset += length;
