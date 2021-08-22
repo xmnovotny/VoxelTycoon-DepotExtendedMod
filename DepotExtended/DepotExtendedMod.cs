@@ -1,4 +1,5 @@
-﻿using DepotExtended.GoToDepot;
+﻿using DepotExtended.DepotVehicles;
+using DepotExtended.GoToDepot;
 using HarmonyLib;
 using VoxelTycoon.Modding;
 using VoxelTycoon.Serialization;
@@ -39,12 +40,14 @@ namespace DepotExtended
             if (SchemaVersion<DepotExtendedMod>.AtLeast(1))
             {
                 SimpleManager<GoToDepotManager>.Current?.Read(reader);
+                SimpleLazyManager<RailDepotManager>.Current.Read(reader);
             }
         }
 
         protected override void Write(StateBinaryWriter writer)
         {
             SimpleManager<GoToDepotManager>.Current?.Write(writer);
+            SimpleLazyManager<RailDepotManager>.Current.Write(writer);
         }
     }
 }

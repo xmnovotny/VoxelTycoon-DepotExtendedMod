@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
+using HarmonyLib;
 using JetBrains.Annotations;
+using UnityEngine;
+using VoxelTycoon;
+using VoxelTycoon.Serialization;
 using VoxelTycoon.Tracks;
 
 namespace DepotExtended.DepotVehicles
 {
+    [SchemaVersion(1)]
     public class RailDepotData
     {
         private Dictionary<VehicleRecipe, List<VehicleRecipeInstance>> _vehicles = new();
@@ -45,6 +51,67 @@ namespace DepotExtended.DepotVehicles
                 FillUnits();
 
             return _vehicleUnits;
+        }
+
+        internal void Read(StateBinaryReader reader)
+        {
+            int instancesCount = reader.ReadInt();
+            MethodInfo addInstanceMInf = AccessTools.Method(typeof(VehicleRecipeSectionInstance), "AddUnitInstance");
+            for (int i = 0; i < instancesCount; i++)
+            {
+                VehicleRecipe vehicleRecipe = LazyManager<VehicleRecipeManager>.Current.Get(reader.ReadInt());
+                VehicleRecipeInstance vehicleRecipeInstance = new (vehicleRecipe)
+                {
+                    Flipped = reader.ReadBool()
+                };
+                for (int j = 0; j < vehicleRecipe.Sections.Length; j++)
+                {
+                    VehicleRecipeSectionInstance vehicleRecipeSectionInstance = vehicleRecipeInstance.Add(vehicleRecipe.Sections[j]);
+                    int num3 = reader.ReadInt();
+                    for (int k = 0; k < num3; k++)
+                    {
+                        VehicleUnit vehicleUnit = UnityEngine.Object.Instantiate(reader.ReadAsset<VehicleUnit>());
+                        addInstanceMInf.Invoke(vehicleRecipeSectionInstance, new object[] { vehicleUnit });
+                        vehicleUnit.Read(reader);
+                    }
+                }
+                AddVehicleInstance(vehicleRecipeInstance);
+            }
+        }
+
+        internal void Write(StateBinaryWriter writer)
+        {
+            using PooledList<VehicleRecipeInstance> allInstances = PooledList<VehicleRecipeInstance>.Take();
+            foreach (List<VehicleRecipeInstance> recipeInstances in _vehicles.Values)
+            {
+                foreach (VehicleRecipeInstance instance in recipeInstances)
+                {
+                    allInstances.Add(instance);
+                }
+            }
+            writer.WriteInt(allInstances.Count);
+            foreach (VehicleRecipeInstance instance in allInstances)
+            {
+                WriteVehicleRecipeInstance(writer, instance);
+            }
+        }
+
+        private void WriteVehicleRecipeInstance(StateBinaryWriter writer, VehicleRecipeInstance vehicleRecipeInstance)
+        {
+            writer.WriteInt(vehicleRecipeInstance.Original.AssetId);
+            writer.WriteBool(vehicleRecipeInstance.Flipped);
+            ImmutableList<VehicleRecipeSectionInstance> sections = vehicleRecipeInstance.Sections;
+            for (int j = 0; j < sections.Count; j++)
+            {
+                VehicleRecipeSectionInstance vehicleRecipeSectionInstance = vehicleRecipeInstance.Sections[j];
+                writer.WriteInt(vehicleRecipeSectionInstance.Units.Count);
+                for (int k = 0; k < vehicleRecipeSectionInstance.Units.Count; k++)
+                {
+                    VehicleUnit vehicleUnit = vehicleRecipeSectionInstance.Units[k];
+                    writer.WriteAsset(vehicleUnit.SharedData.AssetId);
+                    vehicleUnit.Write(writer);
+                }
+            }
         }
 
         private void FillUnits()
