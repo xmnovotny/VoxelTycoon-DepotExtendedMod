@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
@@ -17,6 +18,7 @@ namespace DepotExtended.DepotVehicles
         private readonly Dictionary<VehicleRecipe, List<VehicleRecipeInstance>> _vehicles = new();
         private readonly List<VehicleUnit> _vehicleUnits = new();  //all vehicle units stored in the depot
         private bool _dirty = true;
+        private bool _sorted = false;
 
         public bool IsEmpty => _vehicles.Count == 0;
 
@@ -24,12 +26,22 @@ namespace DepotExtended.DepotVehicles
         {
             _vehicles.Clear();
             int itemsCount = consist.Items.Count;
+            using PooledList<VehicleRecipeInstance> instances = PooledList<VehicleRecipeInstance>.Take();
             for (int i = 0; i < itemsCount; i++)
             {
-                AddVehicleInstance(consist.Items[i]);
+                instances.Add(consist.Items[i]);
+            }
+
+            foreach (VehicleRecipeInstance instance in 
+                from instance in instances
+                orderby instance.Original.Power descending, instance.Original.DisplayName.ToString()
+                select instance)
+            {
+                AddVehicleInstance(instance);
             }
 
             _dirty = true;
+            _sorted = true;
         }
 
         public VehicleConsist CreateFullConsists()
@@ -91,6 +103,7 @@ namespace DepotExtended.DepotVehicles
                 AddVehicleInstance(newInstance);
             }
             train.Remove();
+            ReSort();
         }
 
         internal void Read(StateBinaryReader reader)
@@ -117,6 +130,8 @@ namespace DepotExtended.DepotVehicles
                 }
                 AddVehicleInstance(vehicleRecipeInstance);
             }
+
+            _sorted = true;
         }
 
         internal void Write(StateBinaryWriter writer)
@@ -134,6 +149,24 @@ namespace DepotExtended.DepotVehicles
             {
                 WriteVehicleRecipeInstance(writer, instance);
             }
+        }
+
+        private void ReSort()
+        {
+            if (_sorted)
+                return;
+            _sorted = true;
+            using PooledDictionary<VehicleRecipe, List<VehicleRecipeInstance>> tmpDict = PooledDictionary<VehicleRecipe, List<VehicleRecipeInstance>>.Take(); 
+            foreach (KeyValuePair<VehicleRecipe, List<VehicleRecipeInstance>> instancesList in 
+                from pair in _vehicles
+                orderby pair.Key.Power descending, pair.Key.DisplayName.ToString()
+                select pair)
+            {
+                tmpDict.Add(instancesList.Key, instancesList.Value);   
+            }
+            _vehicles.Clear();
+            foreach (KeyValuePair<VehicleRecipe, List<VehicleRecipeInstance>> pair in tmpDict)
+                _vehicles.Add(pair.Key, pair.Value);
         }
 
         private void WriteVehicleRecipeInstance(StateBinaryWriter writer, VehicleRecipeInstance vehicleRecipeInstance)
@@ -173,6 +206,7 @@ namespace DepotExtended.DepotVehicles
             if (!_vehicles.TryGetValue(instance.Original, out List<VehicleRecipeInstance> vehicleList))
             {
                vehicleList = _vehicles[instance.Original] = new List<VehicleRecipeInstance>();
+               _sorted = false;
             }
             vehicleList.Add(instance);
             _dirty = true;
