@@ -97,6 +97,8 @@ namespace DepotExtended.UI
 		{
 			int? index = FindIndexOfVehicleRecipe(instance.Original);
 			VehicleConsistsHelper.MoveBetween(sourceConsist, Consist, instance, index);
+			if (instance.Flipped)
+				VehicleConsistsHelper.FlipRecipeInstance(instance);
 			if (!_removedInstances.Remove(instance))
 				_addedInstances.Add(instance);
 		}

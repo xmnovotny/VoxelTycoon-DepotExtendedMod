@@ -5,6 +5,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using VoxelTycoon;
+using VoxelTycoon.Game.UI;
 using VoxelTycoon.Serialization;
 using VoxelTycoon.Tools.Remover.Handlers;
 using VoxelTycoon.Tracks;
@@ -17,8 +18,7 @@ namespace DepotExtended.DepotVehicles
     [SchemaVersion(1)]
     public class RailDepotManager: SimpleLazyManager<RailDepotManager>
     {
-        //TODO: Allow put a whole train to the depot content (from depot window)
-        //TODO: Allow sell all stored vehicles (via button in the stored vehicles display or by selling all button) 
+        //TODO: Sell individual vehicles direct from stored units part of vehicles editor 
         private Dictionary<RailDepot, RailDepotData> _depotData = new();
 
         public VehicleConsist GetDepotVehicleConsist(RailDepot depot)
@@ -50,7 +50,7 @@ namespace DepotExtended.DepotVehicles
                 if (data.IsEmpty)
                     _depotData.Remove(depot);
                 
-                DepotWindowExtender.OnDepotVehiclesChanged(depot);
+                SimpleLazyManager<DepotWindowExtender>.Current.OnDepotVehiclesChanged(depot);
             }
         }
 
@@ -66,6 +66,15 @@ namespace DepotExtended.DepotVehicles
                 data.SellAllVehicles();
                 _depotData.Remove(depot);
             }
+        }
+
+        public void PutTrainToStoredVehicles(Train train)
+        {
+            if (train.Depot is not RailDepot railDepot)
+                throw new ArgumentException("Train is not in the depot");
+            
+            GetOrCreateDepotData(railDepot).PutTrainToStoredVehicles(train);
+            railDepot.RemoveVehicle(train);
         }
 
         internal void Read(StateBinaryReader reader)

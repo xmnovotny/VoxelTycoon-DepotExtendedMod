@@ -70,7 +70,7 @@ namespace DepotExtended.UI
             return Instantiate(_template, parent);
         }
 
-        public void Sell()
+        private void Sell()
         {
             Dialog.ShowConfirmation(string.Format(S.SellForConfirmation, "all stored units", "<b><color=#89b454>" + UIFormat.Money.Format(SimpleLazyManager<RailDepotManager>.Current.GetStoredUnitsPrice((RailDepot)_window.Depot)) + "</color></b>"), delegate //TODO: translate
             {
@@ -82,7 +82,7 @@ namespace DepotExtended.UI
                 _window.InvalidateItems();
             });
         }
-        
+
         private static void CreateTemplate()
         {
             DepotWindowVehicleListItem listItem = Instantiate(R.Game.UI.DepotWindow.DepotWindowVehicleListItem);

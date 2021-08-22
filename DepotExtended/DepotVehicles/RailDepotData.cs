@@ -7,6 +7,7 @@ using UnityEngine;
 using VoxelTycoon;
 using VoxelTycoon.Serialization;
 using VoxelTycoon.Tracks;
+using VoxelTycoon.Tracks.Rails;
 
 namespace DepotExtended.DepotVehicles
 {
@@ -76,6 +77,20 @@ namespace DepotExtended.DepotVehicles
             }
 
             return price;
+        }
+
+        public void PutTrainToStoredVehicles(Train train)
+        {
+            ImmutableList<VehicleRecipeInstance> items = train.Consist.Items;
+            int itemsCount = items.Count;
+            for (int i = 0; i < itemsCount; i++)
+            {
+                VehicleRecipeInstance oldInstance = items[i];
+                VehicleRecipeInstance newInstance = new(oldInstance.Original);
+                newInstance.CopyFrom(oldInstance, true);
+                AddVehicleInstance(newInstance);
+            }
+            train.Remove();
         }
 
         internal void Read(StateBinaryReader reader)
@@ -160,6 +175,7 @@ namespace DepotExtended.DepotVehicles
                vehicleList = _vehicles[instance.Original] = new List<VehicleRecipeInstance>();
             }
             vehicleList.Add(instance);
+            _dirty = true;
         }
     }
 }

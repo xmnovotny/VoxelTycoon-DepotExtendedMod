@@ -72,5 +72,20 @@ namespace DepotExtended
             return price;
         }
 
+        public static void FlipRecipeInstance(VehicleRecipeInstance vehicleRecipeInstance)
+        {
+            vehicleRecipeInstance.Flipped = !vehicleRecipeInstance.Flipped;
+            ImmutableList<VehicleRecipeSectionInstance> sections = vehicleRecipeInstance.Sections;
+            for (int j = 0; j < sections.Count; j++)
+            {
+                VehicleRecipeSectionInstance vehicleRecipeSectionInstance = vehicleRecipeInstance.Sections[j];
+                for (int k = 0; k < vehicleRecipeSectionInstance.Units.Count; k++)
+                {
+                    VehicleUnit vehicleUnit = vehicleRecipeSectionInstance.Units[k];
+                    vehicleUnit.Flipped = !vehicleUnit.Flipped;
+                }
+            }
+        }
+
     }
 }
