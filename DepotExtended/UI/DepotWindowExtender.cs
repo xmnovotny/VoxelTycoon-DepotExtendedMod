@@ -40,6 +40,9 @@ namespace DepotExtended.UI
             DepotWindowDepotVehiclesListItem listItem =
                 DepotWindowDepotVehiclesListItem.InstantiateItem(__instance.ItemContainer.transform);
             listItem.Initialize(____window, __instance, units);
+            __instance.Header.SetActive(true);
+            __instance.Placeholder.SetActive(false);
+            __instance.ScrollRect.SetActive(true);
         }
 
         [UsedImplicitly]

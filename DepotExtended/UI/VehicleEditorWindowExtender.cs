@@ -31,13 +31,19 @@ namespace DepotExtended.UI
             {
                 //vehicle was bought / edited
                 SimpleLazyManager<RailDepotManager>.Current.UpdateDepotVehicleConsist(depotVehiclesWindow.Depot, depotVehiclesWindow.Consist);
+                if (instance is BuyVehicleWindow)
+                {
+                    VehicleConsist tmpConsist = new ();  //needed to clone vehicles added from depot storage because of proper units initialization
+                    tmpConsist.CopyFrom(instance.Vehicle.Consist, cloneStatsAndCargo: true, replace: true);
+                    instance.Vehicle.CopyConsistFrom(tmpConsist, cloneStatsAndCargo: true, replace: true);
+                }
             }
         }
 
         [UsedImplicitly]
         [HarmonyPrefix]
         [HarmonyPatch(typeof(VehicleEditorWindow), "Initialize")]
-        // ReSharper disable once InconsistentNaming
+        // ReSharper disable InconsistentNaming
         private static void VehicleEditorWindow_Initialize_prf(VehicleEditorWindow __instance, List<VehicleUnitCheckboxGroup> ____checkboxGroups, VehicleDepot depot, Vector2Int rendererDimensions)
         {
             _depotVehiclesWindow = null;
@@ -52,17 +58,8 @@ namespace DepotExtended.UI
         }
 
         [UsedImplicitly]
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(VehicleEditorWindow), "Initialize")]
-        // ReSharper disable once InconsistentNaming
-        private static void VehicleEditorWindow_Initialize_pof(VehicleEditorWindow __instance, VehicleDepot depot, Vector2Int rendererDimensions)
-        {
-        }
-
-        [UsedImplicitly]
         [HarmonyPrefix]
         [HarmonyPatch(typeof(ActionsView), "Initialize")]
-        // ReSharper disable once InconsistentNaming
         private static void ActionsView_Initialize_prf(ActionsView __instance, VehicleEditorWindow vehicleEditorWindow)
         {
             ActionsViewAddition.TryInsertInstance(__instance, vehicleEditorWindow, _checkboxGroupsTmp, _depotVehiclesWindow);
@@ -73,7 +70,6 @@ namespace DepotExtended.UI
         [UsedImplicitly]
         [HarmonyPostfix]
         [HarmonyPatch(typeof(EditVehicleWindow), "HasChanges")]
-        // ReSharper disable once InconsistentNaming
         private static void EditVehicleWindow_HasChanges_pof(EditVehicleWindow __instance, ref bool __result)
         {
             if (_doingPrimaryAction && !__result && __instance.Vehicle is Train)
@@ -87,7 +83,6 @@ namespace DepotExtended.UI
         [UsedImplicitly]
         [HarmonyPrefix]
         [HarmonyPatch(typeof(EditVehicleWindow), "DoPrimaryAction")]
-        // ReSharper disable once InconsistentNaming
         private static void EditVehicleWindow_DoPrimaryAction_prf()
         {
             _doingPrimaryAction = true;
@@ -96,7 +91,6 @@ namespace DepotExtended.UI
         [UsedImplicitly]
         [HarmonyPostfix]
         [HarmonyPatch(typeof(EditVehicleWindow), "DoPrimaryAction")]
-        // ReSharper disable once InconsistentNaming
         private static void EditVehicleWindow_DoPrimaryAction_pof(EditVehicleWindow __instance, bool __result)
         {
             OnDoPrimaryAction(__instance, __result);
@@ -105,7 +99,6 @@ namespace DepotExtended.UI
         [UsedImplicitly]
         [HarmonyPostfix]
         [HarmonyPatch(typeof(BuyVehicleWindow), "DoPrimaryAction")]
-        // ReSharper disable once InconsistentNaming
         private static void BuyVehicleWindow_DoPrimaryAction_pof(BuyVehicleWindow __instance, bool __result)
         {
             OnDoPrimaryAction(__instance, __result);
@@ -114,7 +107,6 @@ namespace DepotExtended.UI
         [UsedImplicitly]
         [HarmonyPrefix]
         [HarmonyPatch(typeof(BuyVehicleWindow), "GetPrice")]
-        // ReSharper disable once InconsistentNaming
         private static bool BuyVehicleWindow_GetPrice_prf(BuyVehicleWindow __instance, ref double __result)
         {
             if (__instance.Vehicle is Train && _depotVehiclesWindows.TryGetValue(__instance, out DepotVehiclesWindow depotVehiclesWindow))

@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using DepotExtended.UI;
+using HarmonyLib;
 using JetBrains.Annotations;
+using UnityEngine;
+using VoxelTycoon;
+using VoxelTycoon.Tools.Remover.Handlers;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
 using XMNUtils;
 
 namespace DepotExtended.DepotVehicles
 {
+    [HarmonyPatch]
     public class RailDepotManager: SimpleLazyManager<RailDepotManager>
     {
-        //TODO: Block removing depot when there are some vehicles
         //TODO: Save and load depot content
         //TODO: Allow put a whole train to the depot content (from depot window)
         //TODO: Allow sell all stored vehicles (via button in the stored vehicles display or by selling all button) 
@@ -58,5 +62,26 @@ namespace DepotExtended.DepotVehicles
 
             return data;
         }
+
+        [UsedImplicitly]
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(VehicleDepotRemoverHandler), "CanRemoveInternal")]
+        // ReSharper disable InconsistentNaming
+        private static void VehicleDepotRemoverHandler_CanRemoveInternal_pof(VehicleDepotRemoverHandler __instance, List<VehicleDepot> targets, ref string reason, ref bool __result)
+        {
+            if (CurrentWithoutInit != null && __result)
+            {
+                foreach (VehicleDepot vehicleDepot in targets)
+                {
+                    if (vehicleDepot is RailDepot railDepot && Current._depotData.ContainsKey(railDepot))
+                    {
+                        reason = S.BuildingIsNotEmpty;
+                        __result = false;
+                        return;
+                    }
+                }
+            }            
+        }
+        
     }
 }
