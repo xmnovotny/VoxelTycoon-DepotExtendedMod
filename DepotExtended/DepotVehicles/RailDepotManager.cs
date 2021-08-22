@@ -54,6 +54,20 @@ namespace DepotExtended.DepotVehicles
             }
         }
 
+        public double GetStoredUnitsPrice(RailDepot depot)
+        {
+            return _depotData.TryGetValue(depot, out RailDepotData data) ? data.GetStoredUnitsPrice() : 0;
+        }
+
+        public void SellAllVehicles(RailDepot depot)
+        {
+            if (_depotData.TryGetValue(depot, out RailDepotData data))
+            {
+                data.SellAllVehicles();
+                _depotData.Remove(depot);
+            }
+        }
+
         internal void Read(StateBinaryReader reader)
         {
             if (SchemaVersion<RailDepotManager>.AtLeast(1))

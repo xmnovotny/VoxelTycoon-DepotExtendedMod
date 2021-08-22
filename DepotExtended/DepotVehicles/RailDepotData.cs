@@ -13,8 +13,8 @@ namespace DepotExtended.DepotVehicles
     [SchemaVersion(1)]
     public class RailDepotData
     {
-        private Dictionary<VehicleRecipe, List<VehicleRecipeInstance>> _vehicles = new();
-        private List<VehicleUnit> _vehicleUnits = new();  //all vehicle units stored in the depot
+        private readonly Dictionary<VehicleRecipe, List<VehicleRecipeInstance>> _vehicles = new();
+        private readonly List<VehicleUnit> _vehicleUnits = new();  //all vehicle units stored in the depot
         private bool _dirty = true;
 
         public bool IsEmpty => _vehicles.Count == 0;
@@ -51,6 +51,31 @@ namespace DepotExtended.DepotVehicles
                 FillUnits();
 
             return _vehicleUnits;
+        }
+
+        public void SellAllVehicles()
+        {
+            double price = 0;
+            MethodInfo onRemoveMInf = AccessTools.Method(typeof(VehicleUnit), "OnRemove");
+            foreach (VehicleUnit unit in GetAllUnits())
+            {
+                onRemoveMInf.Invoke(unit,new object[] {});
+                price += unit.GetActualPrice();
+            }
+            Company.Current.AddMoney(price, BudgetItem.Vehicles);
+            _vehicles.Clear();
+            _dirty = true;
+        }
+
+        public double GetStoredUnitsPrice()
+        {
+            double price = 0;
+            foreach (VehicleUnit unit in GetAllUnits())
+            {
+                price += unit.GetActualPrice();
+            }
+
+            return price;
         }
 
         internal void Read(StateBinaryReader reader)
