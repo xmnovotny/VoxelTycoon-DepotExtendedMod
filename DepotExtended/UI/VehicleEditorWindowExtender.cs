@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DepotExtended.DepotVehicles;
 using DepotExtended.UI.VehicleEditorWindowViews;
 using HarmonyLib;
@@ -109,5 +110,21 @@ namespace DepotExtended.UI
         {
             OnDoPrimaryAction(__instance, __result);
         }
+        
+        [UsedImplicitly]
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(BuyVehicleWindow), "GetPrice")]
+        // ReSharper disable once InconsistentNaming
+        private static bool BuyVehicleWindow_GetPrice_prf(BuyVehicleWindow __instance, ref double __result)
+        {
+            if (__instance.Vehicle is Train && _depotVehiclesWindows.TryGetValue(__instance, out DepotVehiclesWindow depotVehiclesWindow))
+            {
+                __result = depotVehiclesWindow.GetBuyPrice();
+                return false;
+            }
+
+            return true;
+        }
+        
     }
 }

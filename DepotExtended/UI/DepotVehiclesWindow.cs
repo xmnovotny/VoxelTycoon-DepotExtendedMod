@@ -55,16 +55,18 @@ namespace DepotExtended.UI
 		private Transform _unitsRoot;
 
 		private VehicleEditorRenderer _vehicleRenderer;
+		private bool _sectionsChanged; 
 
 		public ImmutableList<VehicleRecipeInstance> Selection => new ImmutableList<VehicleRecipeInstance>(_selection);
 
 		public VehicleConsist Consist { get; private set; }
-		public bool Changed => _addedInstances.Count != 0 || _removedInstances.Count != 0; 
+		public bool Changed => _sectionsChanged || _addedInstances.Count != 0 || _removedInstances.Count != 0;
 
 		private readonly List<VehicleUnit> _units = new();
 		private VehicleEditorWindow _vehicleEditorWindow;
 		private readonly HashSet<VehicleRecipeInstance> _addedInstances = new();
 		private readonly HashSet<VehicleRecipeInstance> _removedInstances = new();
+		private double _originalVehiclesPrice;
 
 		public RailDepot Depot { get; set; }
 
@@ -142,14 +144,10 @@ namespace DepotExtended.UI
 			_onClosed?.Invoke();
 		}
 
-/*		protected override IEnumerator AnimateShow()
+		internal double GetBuyPrice()
 		{
-			if (_units.Count == 0)
-			{
-				return null;
-			}
-			return base.AnimateShow();
-		}*/
+			return _vehicleEditorWindow.Vehicle.GetPrice(true) + Consist.GetPrice(true) - _originalVehiclesPrice;
+		}
 
 		protected override void InitializeFrame()
 		{
@@ -215,11 +213,49 @@ namespace DepotExtended.UI
 			_titleText.raycastTarget = true;
 			_vehicleEditorWindow = vehicleEditorWindow;
 			vehicleEditorWindow.Closed += TryClose;
-
+			if (vehicleEditorWindow is EditVehicleWindow editorWindow)
+			{
+				SubscribeToDepotVehiclesConsistsChanges();
+			} else if (vehicleEditorWindow is BuyVehicleWindow buyVehicleWindow)
+			{
+				_originalVehiclesPrice = consist.GetPrice(true);
+			}
+			
 			InitializeVehicleRendererDimensions(rendererDimensions);
 			_actions.Initialize(this, _vehicleEditorWindow);
 			Show();
 			InvalidateWindow();
+		}
+
+		private void SubscribeToDepotVehiclesConsistsChanges()
+		{
+			for (int i = 0; i < Consist.Items.Count; i++)
+			{
+				VehicleRecipeInstance vehicleRecipeInstance = Consist.Items[i];
+				for (int j = 0; j < vehicleRecipeInstance.Sections.Count; j++)
+				{
+					SubscribeToSectionChanges(vehicleRecipeInstance.Sections[j]);
+				}
+				vehicleRecipeInstance.OnSectionAdded = (Action<VehicleRecipeSectionInstance>)Delegate.Combine(vehicleRecipeInstance.OnSectionAdded, new Action<VehicleRecipeSectionInstance>(SubscribeToSectionChanges));
+			}
+		}
+
+		private void SubscribeToSectionChanges(VehicleRecipeSectionInstance section)
+		{
+			section.OnUnitAdded = (Action<VehicleUnit>)Delegate.Combine(section.OnUnitAdded, new Action<VehicleUnit>(OnEditVehicleWindowUnitAdded));
+			section.OnUnitRemoved = (Action<VehicleUnit>)Delegate.Combine(section.OnUnitRemoved, new Action<VehicleUnit>(OnEditVehicleWindowUnitRemoved));
+		}
+
+		private void OnEditVehicleWindowUnitAdded(VehicleUnit unit)
+		{
+			_sectionsChanged = true;
+			AccessTools.Method(typeof(EditVehicleWindow), "OnUnitAdded").Invoke((EditVehicleWindow)_vehicleEditorWindow, new object []{unit});
+		}
+
+		private void OnEditVehicleWindowUnitRemoved(VehicleUnit unit)
+		{
+			_sectionsChanged = true;
+			AccessTools.Method(typeof(EditVehicleWindow), "OnUnitRemoved").Invoke((EditVehicleWindow)_vehicleEditorWindow, new object []{unit});
 		}
 
 		protected override void OnUpdate()
@@ -287,21 +323,7 @@ namespace DepotExtended.UI
 		private void FillUnits()
 		{
 			_units.Clear();
-//			ImmutableList<VehicleRecipeInstance> instances = _vehicleEditorWindow.Vehicle.Consist.Items;
-            ImmutableList<VehicleRecipeInstance> instances = Consist.Items;
-			for (int i = 0; i < instances.Count; i++)
-			{
-				ImmutableList<VehicleRecipeSectionInstance> sections = instances[i].Sections;
-				for (int j = 0; j < sections.Count; j++)
-				{
-					ImmutableList<VehicleUnit> units = sections[j].Units;
-					for (int k = 0; k < units.Count; k++)
-					{
-						_units.Add(units[k]);
-//                        return;
-					}
-				}
-			}
+			Consist.FillAllUnits(_units);
 		}
 
 		private int? FindIndexOfVehicleRecipe(VehicleRecipe recipe)

@@ -8,16 +8,21 @@ namespace DepotExtended.DepotVehicles
     public class RailDepotData
     {
         private Dictionary<VehicleRecipe, List<VehicleRecipeInstance>> _vehicles = new();
+        private List<VehicleUnit> _vehicleUnits = new();  //all vehicle units stored in the depot
+        private bool _dirty = true;
 
         public bool IsEmpty => _vehicles.Count == 0;
 
         public void UpdateVehiclesFromConsists(VehicleConsist consist)
         {
             _vehicles.Clear();
-            for (int i = consist.Items.Count - 1; i >= 0; i--)
+            int itemsCount = consist.Items.Count;
+            for (int i = 0; i < itemsCount; i++)
             {
                 AddVehicleInstance(consist.Items[i]);
             }
+
+            _dirty = true;
         }
 
         public VehicleConsist CreateFullConsists()
@@ -33,7 +38,28 @@ namespace DepotExtended.DepotVehicles
 
             return consist;
         }
-        
+
+        public IReadOnlyList<VehicleUnit> GetAllUnits()
+        {
+            if (_dirty) 
+                FillUnits();
+
+            return _vehicleUnits;
+        }
+
+        private void FillUnits()
+        {
+            _dirty = false;
+            _vehicleUnits.Clear();
+            foreach (List<VehicleRecipeInstance> recipeInstances in _vehicles.Values)
+            {
+                foreach (VehicleRecipeInstance recipeInstance in recipeInstances)
+                {
+                    recipeInstance.FillAllUnits(_vehicleUnits);
+                }
+            }
+        }
+
         private void AddVehicleInstance([NotNull] VehicleRecipeInstance instance)
         {
             if (instance == null) throw new ArgumentNullException(nameof(instance));

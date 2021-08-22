@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using VoxelTycoon;
 using VoxelTycoon.Game.UI;
 using VoxelTycoon.Game.UI.VehicleEditorWindowViews;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
-using VoxelTycoon.UI.Controls;
 
 namespace DepotExtended.UI.VehicleEditorWindowViews
 {
@@ -21,12 +17,10 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
         private Vehicle _vehicle;
         private ActionsView _actionsView;
         private DepotVehiclesWindow _depotVehiclesWindow;
-        private readonly HashSet<VehicleRecipeInstance> _originalVehicles = new();  //vehicles that was on the edited train + vehicles placed from the depot (=not newly bought vehicles)
         public bool Changed { get; private set; }
 
         public void MovedFromDepot(VehicleRecipeInstance instance)
         {
-            _originalVehicles.Add(instance);
             Changed = true;
         }
         
@@ -41,20 +35,7 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             AddActionButton(actionsRow, "<", MoveLeft, InvalidateMoveLeft,"Move selected unit(s) to the left.\nHold <b>Shift</b> to move vehicle to the front."); //TODO: translate
             AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, "Move selected unit(s) to the right.\nHold <b>Shift</b> to move vehicle to the rear."); //TODO: translate
             AddActionButton(actionsRow, "", MoveToDepot, InvalidateMoveToDepot, "Placing selected unit(s) from the train into the depot.", R.Fonts.Ketizoloto); //TODO: translate
-            
-            FillOriginalVehicles();
         }
-
-        private void FillOriginalVehicles()
-        {
-            _originalVehicles.Clear();
-            ImmutableList<VehicleRecipeInstance> items = _vehicle.Consist.Items;
-            for (int i = items.Count - 1; i >= 0; i--)
-            {
-                _originalVehicles.Add(items[i]);
-            }
-        }
-        
 
         private void InvalidateMoveLeft(ActionButton button)
         {
@@ -109,17 +90,13 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
                 return;
             }
 
-            for (int i = selection.Count - 1; i >= 0; i--)
+            if (selection.Count == _editorWindow.Vehicle.Consist.Items.Count)
             {
-                if (!_originalVehicles.Contains(selection[i]))
-                {
-                    //newly bought vehicle = not allowed to place in the depot
-                    button.TooltipTarget.Text = "Cannot place newly bought units to the depot."; //TODO: translate
-                    button.Toggle(false);
-                    return;
-                }
+                button.Toggle(false);
+                button.TooltipTarget.Text = "At least one vehicle must remain in the train."; //TODO: translate
+                return;
             }
-            
+
             button.TooltipTarget.Text = "Placing selected unit(s) from the train into the depot."; //TODO: translate
             button.Toggle(true);
         }
@@ -139,9 +116,6 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             ImmutableList<VehicleRecipeInstance> selection = _editorWindow.Selection;
             for (int i = selection.Count - 1; i >= 0; i--)
             {
-                if (!_originalVehicles.Remove(selection[i]))  //not allowed to remove newly bought vehicles
-                    continue;
-                
                 _depotVehiclesWindow.AddUnitToDepot(selection[i], _vehicle.Consist);
                 Changed = true;
             }

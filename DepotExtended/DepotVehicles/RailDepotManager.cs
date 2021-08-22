@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using DepotExtended.UI;
+using JetBrains.Annotations;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
 using XMNUtils;
@@ -8,8 +11,9 @@ namespace DepotExtended.DepotVehicles
     public class RailDepotManager: SimpleLazyManager<RailDepotManager>
     {
         //TODO: Block removing depot when there are some vehicles
-        //TODO: Display depot content in the depot window
         //TODO: Save and load depot content
+        //TODO: Allow put a whole train to the depot content (from depot window)
+        //TODO: Allow sell all stored vehicles (via button in the stored vehicles display or by selling all button) 
         private Dictionary<RailDepot, RailDepotData> _depotData = new();
 
         public VehicleConsist GetDepotVehicleConsist(RailDepot depot)
@@ -20,6 +24,12 @@ namespace DepotExtended.DepotVehicles
             }
 
             return new VehicleConsist();
+        }
+
+        [CanBeNull]
+        public IReadOnlyList<VehicleUnit> GetDepotVehicleUnits(RailDepot depot)
+        {
+            return _depotData.TryGetValue(depot, out RailDepotData data) ? data.GetAllUnits() : null;
         }
 
         public void UpdateDepotVehicleConsist(RailDepot depot, VehicleConsist consist)
@@ -34,6 +44,8 @@ namespace DepotExtended.DepotVehicles
                 data.UpdateVehiclesFromConsists(consist);
                 if (data.IsEmpty)
                     _depotData.Remove(depot);
+                
+                DepotWindowExtender.OnDepotVehiclesChanged(depot);
             }
         }
 
