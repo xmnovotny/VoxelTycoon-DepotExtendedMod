@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using DepotExtended.UI;
 using HarmonyLib;
 using JetBrains.Annotations;
-using UnityEngine;
 using VoxelTycoon;
-using VoxelTycoon.Game.UI;
 using VoxelTycoon.Serialization;
 using VoxelTycoon.Tools.Remover.Handlers;
 using VoxelTycoon.Tracks;
@@ -18,7 +16,7 @@ namespace DepotExtended.DepotVehicles
     [SchemaVersion(1)]
     public class RailDepotManager: SimpleLazyManager<RailDepotManager>
     {
-        //TODO: Sell individual vehicles direct from stored units part of vehicles editor 
+        //TODO: Fix deselect all button in stored vehicles editor
         private Dictionary<RailDepot, RailDepotData> _depotData = new();
 
         public VehicleConsist GetDepotVehicleConsist(RailDepot depot)

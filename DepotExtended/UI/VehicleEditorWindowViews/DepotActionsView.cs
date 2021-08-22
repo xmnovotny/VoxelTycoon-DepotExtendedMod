@@ -24,15 +24,25 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             _depotVehiclesWindow = depotVehiclesWindow;
             _vehicleEditorWindow = vehicleEditorWindow;
             ActionButton[] buttons = GetComponentsInChildren<ActionButton>();
+            string removeTextIcon = "";
+            Font removeTextFont = null;
             foreach (ActionButton button in buttons)
             {
+                if (button.transform.name == "Remove")
+                {
+                    button.OnInvalidate = null;
+                    Text component = button.transform.Find<Text>("Icon");
+                    removeTextIcon = component.text;
+                    removeTextFont = component.font;
+                }
                 button.DestroyGameObject();
             }
             transform.Find<Text>("SelectionInfoRow/DeselectAllButton/Text").text = S.Deselect.ToUpper();
             _selectedUnitsCountText = transform.Find<Text>("SelectionInfoRow/SelectedUnitsCountText");
             Transform actionsRow = transform.Find("ActionsRow");
+            ActionButton removeButton = AddActionButton(actionsRow, removeTextIcon, Remove, null, "Remove", removeTextFont); //TODO: translate
             ActionButton moveButton = AddActionButton(actionsRow, "", MoveFromDepot, InvalidateMoveButton, "Move selected unit(s) to the train.", R.Fonts.Ketizoloto); //TODO: translate
-            _buttons = new[] {moveButton};
+            _buttons = new[] {moveButton, removeButton};
         }
         
         public void Invalidate()
@@ -56,6 +66,18 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
 
         private void InvalidateMoveButton(ActionButton button)
         {
+        }
+
+        public void Remove(PointerEventData eventData)
+        {
+            ImmutableList<VehicleRecipeInstance> selection = _depotVehiclesWindow.Selection;
+            for (int i = 0; i < selection.Count; i++)
+            {
+                _depotVehiclesWindow.SellFromDepot(selection[i]);
+            }
+
+            _depotVehiclesWindow.Invalidate();
+            _vehicleEditorWindow.Invalidate();
         }
 
         private void MoveFromDepot(PointerEventData data)

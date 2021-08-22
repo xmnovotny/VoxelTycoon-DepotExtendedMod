@@ -1,23 +1,17 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using DepotExtended.DepotVehicles;
 using DepotExtended.UI.VehicleEditorWindowViews;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
 using VoxelTycoon;
-using VoxelTycoon.Audio;
 using VoxelTycoon.Game.UI;
 using VoxelTycoon.Game.UI.VehicleEditorWindowViews;
-using VoxelTycoon.Game.UI.VehicleUnitPickerWindowViews;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
 using VoxelTycoon.UI;
-using VoxelTycoon.UI.Controls;
 using VoxelTycoon.UI.Windows;
-using XMNUtils;
 
 namespace DepotExtended.UI
 {
@@ -111,6 +105,11 @@ namespace DepotExtended.UI
 			EditorActionsAddition.MovedFromDepot(instance);
 			if (!_addedInstances.Remove(instance))
 				_removedInstances.Add(instance);
+		}
+
+		public void SellFromDepot(VehicleRecipeInstance instance)
+		{
+			Consist.Remove(instance);
 		}
 
 		public void DeselectAll()
@@ -380,12 +379,6 @@ namespace DepotExtended.UI
 				_selection.Remove(recipeInstance);
 			}
 			InvalidateActionsView();
-		}
-
-		private IEnumerator ScrollToEndAnimated()
-		{
-			yield return null;
-			_scrollView.horizontalNormalizedPosition = 1f;
 		}
 
 		private void SpawnVehicleUnits()
