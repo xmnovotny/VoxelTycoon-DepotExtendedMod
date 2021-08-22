@@ -106,6 +106,11 @@ namespace DepotExtended.GoToDepot
             ReadEnteringTrains(reader);
         }
 
+        internal void Disable()
+        {
+            Behaviour.DestroyGameObject(true);
+        }
+
         internal void Write(StateBinaryWriter writer)
         {
             using PooledList<KeyValuePair<Vehicle,GoToDepotVehicleData>> toSave = PooledList<KeyValuePair<Vehicle,GoToDepotVehicleData>>.Take();

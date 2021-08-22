@@ -10,6 +10,7 @@ using VoxelTycoon.Game.UI;
 using VoxelTycoon.Tracks;
 using VoxelTycoon.Tracks.Rails;
 using VoxelTycoon.UI;
+using VoxelTycoon.UI.Controls;
 using VoxelTycoon.UI.Windows;
 using XMNUtils;
 
@@ -96,7 +97,10 @@ namespace DepotExtended.UI
             sellButton.onClick = null;
             transform.Find("Storages").DestroyGameObject(true);
             transform.Find<Text>("Text").text = "Stored vehicle units"; //TODO: translate
+            DestroyImmediate(_template.gameObject.GetComponent<ClickableDecorator>());
+            Button button = _template.gameObject.GetComponent<Button>();
+            button.onClick = null;
+            button.interactable = false;
         }
-        
     }
 }

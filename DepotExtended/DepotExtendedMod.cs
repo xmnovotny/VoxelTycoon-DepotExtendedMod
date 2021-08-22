@@ -1,6 +1,8 @@
 ﻿using DepotExtended.DepotVehicles;
 using DepotExtended.GoToDepot;
+using DepotExtended.UI;
 using HarmonyLib;
+using ModSettingsUtils;
 using VoxelTycoon.Modding;
 using VoxelTycoon.Serialization;
 using VoxelTycoon.Tracks.Rails;
@@ -9,7 +11,7 @@ using XMNUtils;
 namespace DepotExtended
 {
     [HarmonyPatch]
-    [SchemaVersion(1)]
+    [SchemaVersion(2)]
     public class DepotExtendedMod: Mod
     {
         private Harmony _harmony;
@@ -21,12 +23,16 @@ namespace DepotExtended
             _harmony = new Harmony(HarmonyID);
             FileLog.Reset();
             _harmony.PatchAll();
-            SimpleManager<GoToDepotManager>.Initialize();
         }
 
         protected override void OnGameStarted()
         {
-            //SimpleManager<GoToDepotManager>.Initialize();
+            ModSettingsWindowManager.Current.Register<SettingsWindowPage>("DepotExtended"/* this.GetType().Name*/, "Depot extended");
+            if (!ModSettings<Settings>.Current.VehiclesRidesToDepot)
+                SimpleManager<GoToDepotManager>.Current?.Disable();
+            else if (SimpleManager<GoToDepotManager>.Current == null)
+                SimpleManager<GoToDepotManager>.Initialize();
+
         }
 
         protected override void Deinitialize()
@@ -39,13 +45,24 @@ namespace DepotExtended
         {
             if (SchemaVersion<DepotExtendedMod>.AtLeast(1))
             {
-                SimpleManager<GoToDepotManager>.Current?.Read(reader);
+                bool loadDepotManager = true;
+                
+                if (SchemaVersion<DepotExtendedMod>.AtLeast(2))
+                    loadDepotManager = reader.ReadBool();
+
+                if (loadDepotManager)
+                {
+                    SimpleManager<GoToDepotManager>.Initialize();
+                    SimpleManager<GoToDepotManager>.Current?.Read(reader);
+                }
+
                 SimpleLazyManager<RailDepotManager>.Current.Read(reader);
             }
         }
 
         protected override void Write(StateBinaryWriter writer)
         {
+            writer.WriteBool(SimpleManager<GoToDepotManager>.Current != null); 
             SimpleManager<GoToDepotManager>.Current?.Write(writer);
             SimpleLazyManager<RailDepotManager>.Current.Write(writer);
         }
