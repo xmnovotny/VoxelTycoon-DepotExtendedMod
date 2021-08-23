@@ -32,9 +32,9 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             _checkboxGroups = checkboxGroups;
             _depotVehiclesWindow = depotVehiclesWindow;
             Transform actionsRow = _actionsView.transform.Find("ActionsRow");
-            AddActionButton(actionsRow, "<", MoveLeft, InvalidateMoveLeft,"Move selected unit(s) to the left.\nHold <b>Shift</b> to move vehicle to the front."); //TODO: translate
-            AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, "Move selected unit(s) to the right.\nHold <b>Shift</b> to move vehicle to the rear."); //TODO: translate
-            AddActionButton(actionsRow, "", MoveToDepot, InvalidateMoveToDepot, "Placing selected unit(s) from the train into the depot.", R.Fonts.Ketizoloto); //TODO: translate
+            AddActionButton(actionsRow, "<", MoveLeft, InvalidateMoveLeft,S.UnitMoveLeftTooltip);
+            AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, S.UnitMoveRightTooltip);
+            AddActionButton(actionsRow, "", MoveToDepot, InvalidateMoveToDepot, S.UnitMoveToDepotTooltip, R.Fonts.Ketizoloto);
         }
 
         private void InvalidateMoveLeft(ActionButton button)
@@ -86,18 +86,18 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             if (selection.Count == 0)
             {
                 button.Toggle(false);
-                button.TooltipTarget.Text = "Select some units first"; //TODO: translate
+                button.TooltipTarget.Text = S.SelectUnitsFirst;
                 return;
             }
 
             if (selection.Count == _editorWindow.Vehicle.Consist.Items.Count)
             {
                 button.Toggle(false);
-                button.TooltipTarget.Text = "At least one vehicle must remain in the train."; //TODO: translate
+                button.TooltipTarget.Text = S.OneUnitMustRemain;
                 return;
             }
 
-            button.TooltipTarget.Text = "Placing selected unit(s) from the train into the depot."; //TODO: translate
+            button.TooltipTarget.Text = S.UnitMoveToDepotTooltip;
             button.Toggle(true);
         }
 

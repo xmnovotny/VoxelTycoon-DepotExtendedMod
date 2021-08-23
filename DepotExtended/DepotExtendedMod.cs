@@ -27,7 +27,7 @@ namespace DepotExtended
 
         protected override void OnGameStarted()
         {
-            ModSettingsWindowManager.Current.Register<SettingsWindowPage>("DepotExtended"/* this.GetType().Name*/, "Depot extended");
+            ModSettingsWindowManager.Current.Register<SettingsWindowPage>("DepotExtended", "Depot extended");
             if (!ModSettings<Settings>.Current.VehiclesRidesToDepot)
                 SimpleManager<GoToDepotManager>.Current?.Disable();
             else if (SimpleManager<GoToDepotManager>.Current == null)

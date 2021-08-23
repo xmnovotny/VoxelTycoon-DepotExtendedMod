@@ -51,7 +51,7 @@ namespace DepotExtended.UI
             if (vehicle is not Train train)
                 throw new ArgumentException("Vehicle is not a train");
             
-            Dialog.ShowConfirmation(string.Format("Move all vehicle units of <b>{0}</b> to depot storage and remove the train?", train.Name), delegate //TODO: translate
+            Dialog.ShowConfirmation(string.Format(S.MoveAllVehiclesToStorageConfirm, train.Name), delegate
             {
                 SimpleLazyManager<RailDepotManager>.Current.PutTrainToStoredVehicles(train);
                 Manager<SoundManager>.Current.PlayOnce(new Sound

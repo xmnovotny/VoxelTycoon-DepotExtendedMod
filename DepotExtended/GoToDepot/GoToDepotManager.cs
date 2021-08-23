@@ -324,8 +324,7 @@ namespace DepotExtended.GoToDepot
         {
             if (Current != null && ____depot != null)
             {
-                //TODO: Add translation
-                Manager<NotificationManager>.Current.Push($"Vehicle arrived to the depot", $"{____vehicle.Name} just arrived to the {____depot.Name}", 
+                Manager<NotificationManager>.Current.Push(S.VehicleArrivedDepotTitle, S.VehicleArrivedDepotMessage.Format(____vehicle.Name, ____depot.Name), 
                     new GoToVehicleNotificationAction(____vehicle));
                 //restore original train points
                 if (____vehicle is Train train)

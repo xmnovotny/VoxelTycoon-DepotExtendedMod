@@ -193,7 +193,7 @@ namespace DepotExtended.UI
 			transform3.offsetMax = pos;
 			
 			_titleText = transform1.Find<Text>("Body/Title");
-			_titleText.text = "Vehicle units in the depot"; //TODO: translate
+			_titleText.text = S.VehicleUnitsInDepot;
 			InitializeVehicleRenderer();
 		}
 

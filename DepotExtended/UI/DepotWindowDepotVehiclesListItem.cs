@@ -73,7 +73,7 @@ namespace DepotExtended.UI
 
         private void Sell()
         {
-            Dialog.ShowConfirmation(string.Format(S.SellForConfirmation, "all stored units", "<b><color=#89b454>" + UIFormat.Money.Format(SimpleLazyManager<RailDepotManager>.Current.GetStoredUnitsPrice((RailDepot)_window.Depot)) + "</color></b>"), delegate //TODO: translate
+            Dialog.ShowConfirmation(string.Format(VoxelTycoon.S.SellForConfirmation, S.AllStoredUnits, "<b><color=#89b454>" + UIFormat.Money.Format(SimpleLazyManager<RailDepotManager>.Current.GetStoredUnitsPrice((RailDepot)_window.Depot)) + "</color></b>"), delegate
             {
                 SimpleLazyManager<RailDepotManager>.Current.SellAllVehicles((RailDepot)_window.Depot);
                 Manager<SoundManager>.Current.PlayOnce(new Sound

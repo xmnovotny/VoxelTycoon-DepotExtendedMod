@@ -1,0 +1,14 @@
+﻿{
+  "depot_extended/unit_move_left_tooltip": "Move selected unit(s) to the left.\\nHold <b>Shift</b> to move vehicle to the front.",
+  "depot_extended/unit_move_right_tooltip": "Move selected unit(s) to the right.\nHold <b>Shift</b> to move vehicle to the rear.",
+  "depot_extended/unit_move_to_depot_tooltip": "Place selected unit(s) from the train into the depot.",
+  "depot_extended/select_units_first": "Select some units first.",
+  "depot_extended/one_unit_must_remain": "At least one unit must remain in the train.",
+  "depot_extended/unit_move_to_train_tooltip": "Move selected unit(s) to the train.",
+  "depot_extended/vehicle_units_in_depot": "Vehicle units in the depot",
+  "depot_extended/all_stored_units": "all stored units",
+  "depot_extended/stored_vehicle_units": "Stored vehicle units",
+  "depot_extended/move_all_vehicles_to_storage_confirm": "Move all vehicle units of <b>{0}</b> to the depot storage and remove the train?",
+  "depot_extended/vehicle_arrived_depot_title": "Vehicle arrived to the depot",
+  "depot_extended/vehicle_arrived_depot_message": "{0} just arrived to the {1}"
+}

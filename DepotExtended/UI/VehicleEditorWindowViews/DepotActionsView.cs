@@ -37,11 +37,11 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
                 }
                 button.DestroyGameObject();
             }
-            transform.Find<Text>("SelectionInfoRow/DeselectAllButton/Text").text = S.Deselect.ToUpper();
+            transform.Find<Text>("SelectionInfoRow/DeselectAllButton/Text").text = VoxelTycoon.S.Deselect.ToUpper();
             _selectedUnitsCountText = transform.Find<Text>("SelectionInfoRow/SelectedUnitsCountText");
             Transform actionsRow = transform.Find("ActionsRow");
-            ActionButton removeButton = AddActionButton(actionsRow, removeTextIcon, Remove, null, "Remove", removeTextFont); //TODO: translate
-            ActionButton moveButton = AddActionButton(actionsRow, "", MoveFromDepot, InvalidateMoveButton, "Move selected unit(s) to the train.", R.Fonts.Ketizoloto); //TODO: translate
+            ActionButton removeButton = AddActionButton(actionsRow, removeTextIcon, Remove, null, VoxelTycoon.S.Remove, removeTextFont);
+            ActionButton moveButton = AddActionButton(actionsRow, "", MoveFromDepot, InvalidateMoveButton, S.UnitMoveToTrain, R.Fonts.Ketizoloto);
             _buttons = new[] {moveButton, removeButton};
         }
         
@@ -50,7 +50,7 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             List<VehicleRecipeInstance> source = _depotVehiclesWindow.Selection.ToList();
             int value = source.Sum((VehicleRecipeInstance x) => x.GetUnitsCount());
             double dollars = source.Sum((VehicleRecipeInstance x) => x.GetPrice(actual: true));
-            string text = StringHelper.ToPluralString(value, S.UnitSelected, S.UnitsSelected);
+            string text = StringHelper.ToPluralString(value, VoxelTycoon.S.UnitSelected, VoxelTycoon.S.UnitsSelected);
             _selectedUnitsCountText.text = (text + " <color=#00000088>(" + UIFormat.Money.Format(dollars) + ")</color>").ToUpper();
             ActionButton[] buttons = _buttons;
             foreach (ActionButton actionButton in buttons)

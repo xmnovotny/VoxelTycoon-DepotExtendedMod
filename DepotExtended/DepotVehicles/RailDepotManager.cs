@@ -122,7 +122,7 @@ namespace DepotExtended.DepotVehicles
                 {
                     if (vehicleDepot is RailDepot railDepot && Current._depotData.ContainsKey(railDepot))
                     {
-                        reason = S.BuildingIsNotEmpty;
+                        reason = VoxelTycoon.S.BuildingIsNotEmpty;
                         __result = false;
                         return;
                     }
