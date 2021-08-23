@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -38,10 +39,11 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
                 button.DestroyGameObject();
             }
             transform.Find<Text>("SelectionInfoRow/DeselectAllButton/Text").text = VoxelTycoon.S.Deselect.ToUpper();
+            (transform.Find<Button>("SelectionInfoRow/DeselectAllButton").onClick = new Button.ButtonClickedEvent()).AddListener(DeselectAll);
             _selectedUnitsCountText = transform.Find<Text>("SelectionInfoRow/SelectedUnitsCountText");
             Transform actionsRow = transform.Find("ActionsRow");
-            ActionButton removeButton = AddActionButton(actionsRow, removeTextIcon, Remove, null, VoxelTycoon.S.Remove, removeTextFont);
             ActionButton moveButton = AddActionButton(actionsRow, "", MoveFromDepot, InvalidateMoveButton, S.UnitMoveToTrain, R.Fonts.Ketizoloto);
+            ActionButton removeButton = AddActionButton(actionsRow, removeTextIcon, Remove, null, VoxelTycoon.S.Remove, removeTextFont);
             _buttons = new[] {moveButton, removeButton};
         }
         

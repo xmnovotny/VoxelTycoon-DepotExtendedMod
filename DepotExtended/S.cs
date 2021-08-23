@@ -15,6 +15,7 @@ namespace DepotExtended
         public static string AllStoredUnits => LazyManager<LocaleManager>.Current.Locale.GetString("depot_extended/all_stored_units");
         public static string StoredVehicleUnits => LazyManager<LocaleManager>.Current.Locale.GetString("depot_extended/stored_vehicle_units");
         public static string MoveAllVehiclesToStorageConfirm => LazyManager<LocaleManager>.Current.Locale.GetString("depot_extended/move_all_vehicles_to_storage_confirm");
+        public static string MoveAllVehiclesToStorageTooltip => LazyManager<LocaleManager>.Current.Locale.GetString("depot_extended/move_all_vehicles_to_storage_tooltip");
         public static string VehicleArrivedDepotTitle => LazyManager<LocaleManager>.Current.Locale.GetString("depot_extended/vehicle_arrived_depot_title");
         public static string VehicleArrivedDepotMessage => LazyManager<LocaleManager>.Current.Locale.GetString("depot_extended/vehicle_arrived_depot_message");
 

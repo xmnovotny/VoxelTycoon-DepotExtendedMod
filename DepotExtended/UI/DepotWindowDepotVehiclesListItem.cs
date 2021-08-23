@@ -96,7 +96,14 @@ namespace DepotExtended.UI
             Button sellButton = transform.Find<Button>("SellButton");
             sellButton.onClick = null;
             transform.Find("Storages").DestroyGameObject(true);
-            transform.Find<Text>("Text").text = "Stored vehicle units"; //TODO: translate
+            var text = transform.Find<Text>("Text");
+            text.text = S.StoredVehicleUnits.ToUpper();
+            
+            var textTransform = ((RectTransform)text.transform);
+            var pos = textTransform.anchoredPosition;
+            pos.x -= 25f;
+            textTransform.anchoredPosition = pos;
+            
             DestroyImmediate(_template.gameObject.GetComponent<ClickableDecorator>());
             Button button = _template.gameObject.GetComponent<Button>();
             button.onClick = null;

@@ -43,6 +43,7 @@ namespace DepotExtended.UI
                 Button button = Object.Instantiate(_putTrainToDepotButtonTemplate, listItem.transform);
                 button.onClick = new Button.ButtonClickedEvent();
                 button.onClick.AddListener(() => PutTrainToDepotButtonClick(listItem.Vehicle, depotWindowContent));
+                Tooltip.For(button, S.MoveAllVehiclesToStorageTooltip);
             }
         }
 

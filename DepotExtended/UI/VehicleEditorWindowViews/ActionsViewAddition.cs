@@ -31,10 +31,18 @@ namespace DepotExtended.UI.VehicleEditorWindowViews
             _actionsView = actionsView;
             _checkboxGroups = checkboxGroups;
             _depotVehiclesWindow = depotVehiclesWindow;
-            Transform actionsRow = _actionsView.transform.Find("ActionsRow");
+            RectTransform actionsRow = (RectTransform) _actionsView.transform.Find("ActionsRow");
             AddActionButton(actionsRow, "<", MoveLeft, InvalidateMoveLeft,S.UnitMoveLeftTooltip);
             AddActionButton(actionsRow, ">", MoveRight, InvalidateMoveRight, S.UnitMoveRightTooltip);
             AddActionButton(actionsRow, "", MoveToDepot, InvalidateMoveToDepot, S.UnitMoveToDepotTooltip, R.Fonts.Ketizoloto);
+            
+            Vector2 size = actionsRow.sizeDelta;
+            size.x += 80f;
+            actionsRow.sizeDelta = size;
+
+            Vector2 pos = actionsRow.anchoredPosition;
+            pos.x += size.x / 2f;
+            actionsRow.anchoredPosition = pos;
         }
 
         private void InvalidateMoveLeft(ActionButton button)
