@@ -16,15 +16,14 @@ namespace DepotExtended
         {
             float num = 0f;
             int unitsCount = __instance.Units.Count;
-            float flipped = __instance.Flipped ? -1 : 1;
             for (int i = 0; i < unitsCount; i++)
             {
                 VehicleUnit vehicleUnit = __instance.Units[i];
                 float num2 = Vector3.Dot(vehicleUnit.transform.forward, Vector3.down) * (5f / 26f);
-                float num3 = (useMaxWeight ? vehicleUnit.MaxWeight : vehicleUnit.Weight) * num2 * flipped;
+                float num3 = (useMaxWeight ? vehicleUnit.MaxWeight : vehicleUnit.Weight) * num2 * (vehicleUnit.Flipped ? -1 : 1);
                 num += num3;
             }
-            __result = num * 9.8f;
+            __result = num * 9.8f * (__instance.Flipped ? -1 : 1);
             return false;
         }
 
